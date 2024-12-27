@@ -175,7 +175,7 @@ resource "aws_security_group_rule" "app_alb_vpn" {
     from_port = 80
     to_port =  80
     protocol = "tcp"
-     source_security_group_id = module.vpn.sg_id # source is where you are getting traffic from.
+    source_security_group_id = module.vpn.sg_id # source is where you are getting traffic from.
     security_group_id = module.app_alb.sg_id
 }
 #app_alb is accepting connections from bastion

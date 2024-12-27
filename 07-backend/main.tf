@@ -33,6 +33,7 @@ resource "null_resource" "backend" {
     provisioner "file" {
     source     = "${var.common_tags.Component}.sh"
     destination = "/tmp/${var.common_tags.Component}.sh"
+    
   }
    provisioner "remote-exec" {
     inline = [
