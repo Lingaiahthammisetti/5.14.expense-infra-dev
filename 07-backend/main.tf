@@ -81,7 +81,7 @@ resource "aws_lb_target_group" "backend" {
   vpc_id   = data.aws_ssm_parameter.vpc_id.value
 
     health_check {
-    path                = "/"
+    path                = "/health"
     port                = 8080
     protocol            = "HTTP"
     healthy_threshold   = 2
