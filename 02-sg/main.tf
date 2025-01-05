@@ -19,24 +19,7 @@ vpc_id =  data.aws_ssm_parameter.vpc_id.value #We are getting the vpc_id from SS
 common_tags = var.common_tags
 sg_name = "backend"
 }
-module "frontend" {
-source ="../../5.12.terraform-aws-securitygroup"
-project_name = var.project_name
-environment =  var.environment
-sg_description = "SG for Frontend Instances"
-vpc_id =  data.aws_ssm_parameter.vpc_id.value #We are getting the vpc_id from SSM parameter for Frontend Security group
-common_tags = var.common_tags
-sg_name = "frontend"
-}
-module "bastion" {
-source ="../../5.12.terraform-aws-securitygroup"
-project_name = var.project_name
-environment =  var.environment
-sg_description = "SG for Bastion Instances"
-vpc_id =  data.aws_ssm_parameter.vpc_id.value #We are getting the vpc_id from SSM parameter for Bastion Security group
-common_tags = var.common_tags
-sg_name = "bastion"
-}
+
 #We need to add two more for app_alb and vpcn
 module "app_alb" {
 source ="../../5.12.terraform-aws-securitygroup"
@@ -47,16 +30,17 @@ vpc_id =  data.aws_ssm_parameter.vpc_id.value #We are getting the vpc_id from SS
 common_tags = var.common_tags
 sg_name = "app_alb"
 }
-module "vpn" {
+
+module "frontend" {
 source ="../../5.12.terraform-aws-securitygroup"
 project_name = var.project_name
 environment =  var.environment
-sg_description = "SG for VPN Instances"
-vpc_id =  data.aws_ssm_parameter.vpc_id.value #We are getting the vpc_id from SSM parameter for Bastion Security group
+sg_description = "SG for Frontend Instances"
+vpc_id =  data.aws_ssm_parameter.vpc_id.value #We are getting the vpc_id from SSM parameter for Frontend Security group
 common_tags = var.common_tags
-ingress_rules   = var.vpn_sg_rules
-sg_name = "vpn"
+sg_name = "frontend"
 }
+
 #We need to add two more for app_alb and vpcn
 module "web_alb" {
 source ="../../5.12.terraform-aws-securitygroup"
@@ -67,6 +51,28 @@ vpc_id =  data.aws_ssm_parameter.vpc_id.value #We are getting the vpc_id from SS
 common_tags = var.common_tags
 sg_name = "web_alb"
 }
+
+module "bastion" {
+source ="../../5.12.terraform-aws-securitygroup"
+project_name = var.project_name
+environment =  var.environment
+sg_description = "SG for Bastion Instances"
+vpc_id =  data.aws_ssm_parameter.vpc_id.value #We are getting the vpc_id from SSM parameter for Bastion Security group
+common_tags = var.common_tags
+sg_name = "bastion"
+}
+
+module "vpn" {
+source ="../../5.12.terraform-aws-securitygroup"
+project_name = var.project_name
+environment =  var.environment
+sg_description = "SG for VPN Instances"
+vpc_id =  data.aws_ssm_parameter.vpc_id.value #We are getting the vpc_id from SSM parameter for Bastion Security group
+common_tags = var.common_tags
+ingress_rules   = var.vpn_sg_rules
+sg_name = "vpn"
+}
+
 
 #DB is accepting connections from backend
 resource "aws_security_group_rule" "db_backend" {
@@ -133,62 +139,6 @@ resource "aws_security_group_rule" "backend_vpn_http" {
     security_group_id = module.backend.sg_id
 }
 
-#added as part of Jenkins CICD
-resource "aws_security_group_rule" "backend_default_vpc" {
-  type              = "ingress"
-  from_port         = 22
-  to_port           = 22
-  protocol          = "tcp"
-  cidr_blocks = ["172.31.0.0/16"]
-  security_group_id = module.backend.sg_id
-}
-
-#added as part of Jenkins CICD
-resource "aws_security_group_rule" "frontend_default_vpc" {
-  type              = "ingress"
-  from_port         = 22
-  to_port           = 22
-  protocol          = "tcp"
-  cidr_blocks = ["172.31.0.0/16"]
-  security_group_id = module.frontend.sg_id
-}
-
-#Frontend is accepting connections from public
-resource "aws_security_group_rule" "frontend_public" {
-    type = "ingress"
-    from_port = 80
-    to_port =  80
-    protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    security_group_id = module.frontend.sg_id
-}
-#Frontend is accepting connections from bastion
-resource "aws_security_group_rule" "frontend_bastion" {
-    type = "ingress"
-    from_port = 22
-    to_port =  22
-    protocol = "tcp"
-     source_security_group_id = module.bastion.sg_id # source is where you are getting traffic from.
-    security_group_id = module.frontend.sg_id
-}
-#Frontend is accepting connections from vpn
-resource "aws_security_group_rule" "frontend_vpn" {
-    type = "ingress"
-    from_port = 22
-    to_port =  22
-    protocol = "tcp"
-     source_security_group_id = module.vpn.sg_id # source is where you are getting traffic from.
-    security_group_id = module.frontend.sg_id
-}
-#bastion is accepting connections from public
-resource "aws_security_group_rule" "bastion_public" {
-    type = "ingress"
-    from_port = 22
-    to_port =  22
-    protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    security_group_id = module.bastion.sg_id
-}
 #app_alb is accepting connections from vpn
 resource "aws_security_group_rule" "app_alb_vpn" {
     type = "ingress"
@@ -217,6 +167,44 @@ resource "aws_security_group_rule" "app_alb_frontend" {
     security_group_id = module.app_alb.sg_id
 }
 
+
+#Frontend is accepting connections from public
+resource "aws_security_group_rule" "frontend_public" {
+    type = "ingress"
+    from_port = 80
+    to_port =  80
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    security_group_id = module.frontend.sg_id
+}
+#Frontend is accepting connections from bastion
+resource "aws_security_group_rule" "frontend_bastion" {
+    type = "ingress"
+    from_port = 22
+    to_port =  22
+    protocol = "tcp"
+     source_security_group_id = module.bastion.sg_id # source is where you are getting traffic from.
+    security_group_id = module.frontend.sg_id
+}
+#Frontend is accepting connections from vpn
+resource "aws_security_group_rule" "frontend_vpn" {
+    type = "ingress"
+    from_port = 22
+    to_port =  22
+    protocol = "tcp"
+     source_security_group_id = module.vpn.sg_id # source is where you are getting traffic from.
+    security_group_id = module.frontend.sg_id
+}
+#Frontend is accepting connections from web_alb
+resource "aws_security_group_rule" "frontend_web_alb" {
+    type = "ingress"
+    from_port = 80
+    to_port =  80
+    protocol = "tcp"
+     source_security_group_id = module.web_alb.sg_id # source is where you are getting traffic from.
+    security_group_id = module.frontend.sg_id
+}
+
 #web_alb is accepting connections from public
 resource "aws_security_group_rule" "web_alb_public" {
     type = "ingress"
@@ -226,6 +214,7 @@ resource "aws_security_group_rule" "web_alb_public" {
     cidr_blocks = ["0.0.0.0/0"]
     security_group_id = module.web_alb.sg_id
 }
+
 #web_alb is accepting connections from public
 resource "aws_security_group_rule" "web_alb_public_https" {
     type = "ingress"
@@ -236,12 +225,32 @@ resource "aws_security_group_rule" "web_alb_public_https" {
     security_group_id = module.web_alb.sg_id
 }
 
-#Frontend is accepting connections from web_alb
-resource "aws_security_group_rule" "frontend_web_alb" {
+#bastion is accepting connections from public
+resource "aws_security_group_rule" "bastion_public" {
     type = "ingress"
-    from_port = 80
-    to_port =  80
+    from_port = 22
+    to_port =  22
     protocol = "tcp"
-     source_security_group_id = module.web_alb.sg_id # source is where you are getting traffic from.
-    security_group_id = module.frontend.sg_id
+    cidr_blocks = ["0.0.0.0/0"]
+    security_group_id = module.bastion.sg_id
+}
+
+#added as part of Jenkins CICD
+resource "aws_security_group_rule" "backend_default_vpc" {
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  cidr_blocks = ["172.31.0.0/16"]
+  security_group_id = module.backend.sg_id
+}
+
+#added as part of Jenkins CICD
+resource "aws_security_group_rule" "frontend_default_vpc" {
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  cidr_blocks = ["172.31.0.0/16"]
+  security_group_id = module.frontend.sg_id
 }
