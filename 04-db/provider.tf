@@ -9,7 +9,7 @@ backend "s3" {
   bucket = "expense-infra-dev-remote-state"
   key = "expense-infra-dev-db"
   region = "us-east-1"
-  dynamodb_table="expense-infra-dev-remote-state-locking"
+  dynamodb_table="expense-infra-dev-locking"
   }
 }
 

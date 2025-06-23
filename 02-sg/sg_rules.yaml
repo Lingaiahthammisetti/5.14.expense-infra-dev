@@ -8,6 +8,8 @@
   - expense-dev-bastion
   - expense-dev-vpn
 
+  Note: We should use VPN or Bastion server
+  
   db:
   - name: db_backend
     desc: db accepting connections from backend
@@ -82,7 +84,9 @@
      desc: vpn accepting connections from public
      source: public
      port: 943, 443, 22, 1194
-  bastion:
+
+
+  bastion: # We use only one VPN or Bastion, We used VPN only here.
   - name: bastion_public
     desc: bastion accepting connections from public
     source: public #ideally your home IP address/32
