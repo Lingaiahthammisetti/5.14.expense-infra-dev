@@ -8,7 +8,7 @@
 
 
 ```
-for i in 01-vpc/ 02-sg/ 04-vpn/ 05-db/ ; do cd $i; terraform apply -auto-approve; cd .. ; done 
+for i in 01-vpc/ 02-sg/ 04-vpn/ ; do cd $i; terraform apply -auto-approve; cd .. ; done 
 ```
 
 ```
