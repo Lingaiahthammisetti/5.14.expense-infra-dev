@@ -91,7 +91,7 @@ resource "aws_lb_target_group" "frontend" {
 }
 
 resource "aws_launch_template" "frontend" {
-  name        ="${var.project_name}-${var.environment}-${var.common_tags.Component}"
+  name_prefix        ="${var.project_name}-${var.environment}-${var.common_tags.Component}-"
   
   image_id = aws_ami_from_instance.frontend.id
   instance_initiated_shutdown_behavior = "terminate"
