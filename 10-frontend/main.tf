@@ -51,6 +51,7 @@ resource "aws_ec2_instance_state" "frontend" {
 resource "aws_ami_from_instance" "frontend" {
   name               ="${var.project_name}-${var.environment}-${var.common_tags.Component}"
   source_instance_id = module.frontend.id
+  snapshot_without_reboot = false
   depends_on         = [ aws_ec2_instance_state.frontend ]
 }
 
@@ -59,15 +60,16 @@ resource "null_resource" "frontend_delete" {
   triggers = {
     instance_id = module.frontend.id # this will be triggered everytime instance is created
   }
-  #   connection {
-  #   type     = "ssh"
-  #   user     = "ec2-user"
-  #   password = "DevOps321"
-  #   host     = module.frontend.private_ip
-  # }
-   provisioner "local-exec" {
+    connection {
+    type     = "ssh"
+    user     = "ec2-user"
+    password = "DevOps321"
+    host     = module.frontend.private_ip
+  }
+  provisioner "local-exec" {
     command = "aws ec2 terminate-instances --instance-ids ${module.frontend.id}"
   }
+
   depends_on = [ aws_ami_from_instance.frontend ]
 }
 
@@ -141,7 +143,7 @@ resource "aws_autoscaling_group" "frontend" {
   }
 
   tag {
-    key                 = "Project"
+    key                 = "project"
     value               = "${var.project_name}"
     propagate_at_launch = false
   }
